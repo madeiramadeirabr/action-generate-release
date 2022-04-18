@@ -8508,7 +8508,20 @@ async function calculateAndPrepareContentRelease(numberPullRequest){
     })
     
     let lastTag = await findTag()
+    
+    if(lastTag == null){
+        if(major != 0){
+            minor = 0
+            patch = 0
+        }
+    
+        if(major == 0 && minor != 0){
+            patch = 0
+        } 
+    }
+
     let nextRelease = lastTag != undefined && lastTag != '' && lastTag != null ? nextTag(lastTag) : `${major}.${minor}.${patch}`
+    
     let status = await gerenateReleaseNote(nextRelease, contentRelease)
     if(status == 201){
         console.log('Release note criada!')
