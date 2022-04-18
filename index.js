@@ -112,7 +112,10 @@ async function findTag(){
         repo: github.context.payload.repository.name
     }
     let res = await octokit.request('GET /repos/{owner}/{repo}/git/refs/tags', param)
-    return res.data.pop().ref.split('/').pop()
+    if(res.status == 200)
+        return res.data.pop().ref.split('/').pop()
+    
+    return null
 }
 
 function countSemanticRelease(message){
