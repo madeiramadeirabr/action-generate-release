@@ -107,15 +107,17 @@ function nextTag(lastTag){
 }
 
 async function findTag(){
-    let param = {
-        owner: github.context.payload.repository.owner.name,
-        repo: github.context.payload.repository.name
+    try{
+        let param = {
+            owner: github.context.payload.repository.owner.name,
+            repo: github.context.payload.repository.name
+        }
+        let res = await octokit.request('GET /repos/{owner}/{repo}/git/refs/tags', param)
+        if(res.status == 200)
+            return res.data.pop().ref.split('/').pop()
+    }catch(error){
+        return null
     }
-    let res = await octokit.request('GET /repos/{owner}/{repo}/git/refs/tags', param)
-    if(res.status == 200)
-        return res.data.pop().ref.split('/').pop()
-    
-    return null
 }
 
 function countSemanticRelease(message){
