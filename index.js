@@ -91,7 +91,11 @@ async function gerenateReleaseNote(release, content){
 
 function nextTag(lastTag){
     let versions = lastTag.split('.')
-    if(versions.length == 3){
+    if(versions.length < 3){
+        for(let x = versions.length; x < 3; x++){
+            versions[x] = '0'
+        }
+    }
         let prefix = ''
 
         if(versions[0].match('[v0-9]+')){
@@ -116,7 +120,6 @@ function nextTag(lastTag){
         patch += Number(versions[2])
 
         return `${prefix}${major}.${minor}.${patch}`
-    }
 }
 
 async function findTag(){
