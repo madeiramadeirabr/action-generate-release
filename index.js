@@ -139,17 +139,17 @@ function countSemanticRelease(message){
         contentRelease += `- ${message} \n`
         major++
     }else{
-        let commitDefaultFeat = /feat+\:.*/
-        let commitDefaultBuild = /build+\:.*/
-        let commitDefaultChore = /chore+\:.*/
-        let commitDefaultCi = /ci+\:.*/
-        let commitDefaultDocs = /docs+\:.*/
-        let commitDefaultStyle = /style+\:.*/
-        let commitDefaultRefactor = /refactor+\:.*/
-        let commitDefaultPerf = /perf+\:.*/
-        let commitDefaultFix = /fix+\:.*/
-        let commitDefaultHotFix = /hotfix+\:.*/
-        let commitDefaultBreakingChange = /([a-z]|[A-z])+\!.*/
+        let commitDefaultFeat = /feat:[\s\S]+|feat\(.+\):[\s\S]+/
+        let commitDefaultBuild = /build:[\s\S]+|build\(.+\):[\s\S]+/
+        let commitDefaultChore = /chore:[\s\S]+|chore\(.+\):[\s\S]+/
+        let commitDefaultCi = /ci:[\s\S]+|ci\(.+\):[\s\S]+/
+        let commitDefaultDocs = /docs:[\s\S]+|docs\(.+\):[\s\S]+/
+        let commitDefaultStyle = /style:[\s\S]+|style\(.+\):[\s\S]+/
+        let commitDefaultRefactor = /refactor:[\s\S]+|refactor\(.+\):[\s\S]+/
+        let commitDefaultPerf = /perf:[\s\S]+|perf\(.+\):[\s\S]+/
+        let commitDefaultFix = /fix:[\s\S]+|fix\(.+\):[\s\S]+/
+        let commitDefaultHotFix = /hotfix:[\s\S]+|hotfix\(.+\):[\s\S]+/
+        let commitDefaultBreakingChange = /[a-zA-Z]+!:[\s\S]+|[a-zA-Z]+\(.+\)!:[\s\S]+/
         
         
         
