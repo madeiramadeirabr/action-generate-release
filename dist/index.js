@@ -8483,11 +8483,13 @@ async function run (){
     if(githubToken){
         let branch_event = github.context.payload.ref.split('/')[2]
         if(branch_event == github.context.payload.repository.default_branch){
-            let {id} = github.context.payload.commits[0]
-            let numberPullRequest = await getNumberPullRequestByCommit(id)
-            if(numberPullRequest != null){
-                calculateAndPrepareContentRelease(numberPullRequest)
-            }else{
+            try{
+                let {id} = github.context.payload.commits[0]
+                let numberPullRequest = await getNumberPullRequestByCommit(id)
+                if(numberPullRequest != null)
+                    calculateAndPrepareContentRelease(numberPullRequest)
+                
+            }catch(error){
                 core.setFailed('Não há pull request associado a este commit!')
             }
         }else{
@@ -8561,7 +8563,11 @@ async function gerenateReleaseNote(release, content){
 
 function nextTag(lastTag){
     let versions = lastTag.split('.')
-    if(versions.length == 3){
+    if(versions.length < 3){
+        for(let x = versions.length; x < 3; x++){
+            versions[x] = '0'
+        }
+    }
         let prefix = ''
 
         if(versions[0].match('[v0-9]+')){
@@ -8586,7 +8592,6 @@ function nextTag(lastTag){
         patch += Number(versions[2])
 
         return `${prefix}${major}.${minor}.${patch}`
-    }
 }
 
 async function findTag(){
