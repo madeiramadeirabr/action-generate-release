@@ -10,7 +10,7 @@ jobs:
     steps:
       - name: Checkout
         id: release
-        uses: madeiramadeirabr/action-generate-release@0.1.0
+        uses: madeiramadeirabr/action-generate-release@production
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
