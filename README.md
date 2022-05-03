@@ -12,7 +12,7 @@ Esta action calcula as mudanças em releases usando o padrão de conventional co
 
 ## Exemplo de uso
 ```yml
-uses: madeiramadeirabr/action-generate-release@production
+uses: madeiramadeirabr/action-generate-release@0.1.0
 with:
     github-token: ${{ secrets.GITHUB_TOKEN }}    
 ```
