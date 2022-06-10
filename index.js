@@ -21,13 +21,13 @@ async function run (){
                     calculateAndPrepareContentRelease(number, last_release, body, id)
                 }
             }catch(error){
-                core.setFailed('Não há pull request associado a este commit!')
+                core.setFailed('There is no pull request associated with this commit!')
             }
         }else{
-            core.setFailed('Esta action só será executada quando a branch for mesclada com a branch padrão!')
+            core.setFailed('This action will only be performed when the branch is merged with the default branch!')
         }
     }else{
-        core.setFailed('O token do Github é obrigatório!')
+        core.setFailed('Github token is required!')
     }    
 }
 
@@ -64,21 +64,21 @@ async function calculateAndPrepareContentRelease(numberPullRequest, last_release
     if(id != null){
         let {status} = await updateReleaseNote(last_release, contentRelease, id)
         if(status == 200){
-            console.log('Release atualizada!')
-            core.setOutput('success','Release atualizada!')
+            console.log('Release note updated!')
+            core.setOutput('success','Release note updated!')
             return
         }else{
-            core.setFailed('Erro atualizar release note!')
+            core.setFailed('Error updating release note!')
             return
         }
     }
     
     let {status} = await gerenateReleaseNote(nextRelease, contentRelease)
     if(status == 201){
-        console.log('Release note criada!')
-        core.setOutput('success','Release criada!')
+        console.log('Release note created!')
+        core.setOutput('success','Release note created!')
     }else{
-        core.setFailed('Erro ao criada release note!')
+        core.setFailed('Error creating release note!')
     }
 }
 
@@ -111,7 +111,7 @@ async function gerenateReleaseNote(release, content){
             generate_release_notes: false
         })
     }catch{
-        console.log('Erro ao criar a release!')
+        console.log('Error creating Release check if there is no release for this PR!')
         return {status: 422}
     }
     
@@ -131,7 +131,7 @@ async function updateReleaseNote(release, content, id){
             prerelease: false
         })
     }catch{
-        console.log('Erro atualizar Release!')
+        console.log('Error updating Release check if there is no release for this PR!')
         return {status: 422}
     }
     
