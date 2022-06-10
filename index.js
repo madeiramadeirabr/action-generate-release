@@ -15,24 +15,30 @@ async function run (){
         if(branch_event == github.context.payload.repository.default_branch){
             try{
                 let {id} = github.context.payload.commits[0]
-                let numberPullRequest = await getNumberPullRequestByCommit(id)
-                if(numberPullRequest != null)
-                    calculateAndPrepareContentRelease(numberPullRequest)
-                
+                let {number, milestone} = await getNumberPullRequestByCommit(id)
+                if(number != null){
+                    let {last_release, body, id} = await getRelease(milestone)
+                    calculateAndPrepareContentRelease(number, last_release, body, id)
+                }
             }catch(error){
                 core.setFailed('Não há pull request associado a este commit!')
             }
         }else{
-            core.setFailed('Esta ação só será executada quando a branch for mesclada com a branch padrão!')
+            core.setFailed('Esta action só será executada quando a branch for mesclada com a branch padrão!')
         }
     }else{
         core.setFailed('O token do Github é obrigatório!')
-    }
+    }    
 }
 
-async function calculateAndPrepareContentRelease(numberPullRequest){
+async function calculateAndPrepareContentRelease(numberPullRequest, last_release, body, id){
     let dataCommits = await getCommits(numberPullRequest)
-    
+    contentRelease = body != null ? body : contentRelease
+    let fullChange = ''
+    if(contentRelease.length > 19){ 
+        fullChange = await getFullChange(contentRelease)        
+        contentRelease = contentRelease.replace(/\**\Full Changelog\**\:[\s\S]+|feat\(.+\):[\s\S]+/, "")
+    }
     dataCommits.data.map(async (dataCommit)=>{
         let {commit} = dataCommit
         let {message} = commit
@@ -53,42 +59,82 @@ async function calculateAndPrepareContentRelease(numberPullRequest){
     }
 
     let nextRelease = lastTag != undefined && lastTag != '' && lastTag != null ? nextTag(lastTag) : `${major}.${minor}.${patch}`
+    if(lastTag != null)
+        contentRelease += fullChange == '' ? `\n **Full Changelog**: https://github.com/${github.context.payload.repository.owner.name}/${github.context.payload.repository.name}/compare/${last_release}...${nextRelease}\n` : fullChange
+    if(id != null){
+        let {status} = await updateReleaseNote(last_release, contentRelease, id)
+        if(status == 200){
+            console.log('Release atualizada!')
+            core.setOutput('success','Release atualizada!')
+            return
+        }else{
+            core.setFailed('Erro atualizar release note!')
+            return
+        }
+    }
     
-    let status = await gerenateReleaseNote(nextRelease, contentRelease)
+    let {status} = await gerenateReleaseNote(nextRelease, contentRelease)
     if(status == 201){
         console.log('Release note criada!')
-        core.setOutput('success','Release note criada!')
+        core.setOutput('success','Release criada!')
     }else{
-        core.setFailed('Erro ao criar release note!')
+        core.setFailed('Erro ao criada release note!')
     }
 }
 
 async function getNumberPullRequestByCommit(commitSha){
+
     let res = await octokit.request('GET /repos/{owner}/{repo}/commits/{commit_sha}/pulls', {
         owner: github.context.payload.repository.owner.name,
         repo: github.context.payload.repository.name,
         commit_sha: commitSha
     })
-
-    if(res.status != 200)
-        return null
-
-    return res.data.pop().number
+    let {number, milestone} = res.data.pop();
+    
+    return {
+        number: number,
+        milestone: milestone != null ? milestone.title : null
+    }
+    
 }
 async function gerenateReleaseNote(release, content){
-    let res = await octokit.request('POST /repos/{owner}/{repo}/releases', {
-        owner: github.context.payload.repository.owner.name,
-        repo: github.context.payload.repository.name,
-        tag_name: release,
-        target_commitish: github.context.payload.repository.default_branch,
-        name: release,
-        body: content,
-        draft: false,
-        prerelease: false,
-        generate_release_notes: false
-    })
+    try{
+        return await octokit.request('POST /repos/{owner}/{repo}/releases', {
+            owner: github.context.payload.repository.owner.name,
+            repo: github.context.payload.repository.name,
+            tag_name: release,
+            target_commitish: github.context.payload.repository.default_branch,
+            name: release,
+            body: content,
+            draft: false,
+            prerelease: false,
+            generate_release_notes: false
+        })
+    }catch{
+        console.log('Erro ao criar a release!')
+        return {status: 422}
+    }
+    
+}
 
-    return res.status
+async function updateReleaseNote(release, content, id){
+    try{
+        return await octokit.request('PATCH /repos/{owner}/{repo}/releases/{release_id}', {
+            owner: github.context.payload.repository.owner.name,
+            repo: github.context.payload.repository.name,
+            release_id: id,
+            tag_name: release,
+            target_commitish: github.context.payload.repository.default_branch,
+            name: release,
+            body: content,
+            draft: false,
+            prerelease: false
+        })
+    }catch{
+        console.log('Erro atualizar Release!')
+        return {status: 422}
+    }
+    
 }
 
 function nextTag(lastTag){
@@ -98,12 +144,7 @@ function nextTag(lastTag){
             versions[x] = '0'
         }
     }
-        let prefix = ''
-
-        if(versions[0].match('[v0-9]+')){
-            prefix = versions[0].split(/\d/)[0]
-        }
-
+        
         versions[0] = versions[0].split(/([a-z]|[A-z])+\.*/).pop()
         if(major != 0){
             minor = 0
@@ -121,7 +162,7 @@ function nextTag(lastTag){
         minor += Number(versions[1]) 
         patch += Number(versions[2])
 
-        return `${prefix}${major}.${minor}.${patch}`
+        return `${major}.${minor}.${patch}`
 }
 
 async function findTag(){
@@ -140,42 +181,52 @@ async function findTag(){
 
 function countSemanticRelease(message){
     let length = message.split('\n')
-    if(length.length >= 3 && length.pop() != '' && major == 0 ){
+    
+    if (isMajor(message, length)) {
         contentRelease += `- ${message} \n`
         major++
-    }else{
-        let commitDefaultFeat = /feat:[\s\S]+|feat\(.+\):[\s\S]+/
-        let commitDefaultBuild = /build:[\s\S]+|build\(.+\):[\s\S]+/
-        let commitDefaultChore = /chore:[\s\S]+|chore\(.+\):[\s\S]+/
-        let commitDefaultCi = /ci:[\s\S]+|ci\(.+\):[\s\S]+/
-        let commitDefaultDocs = /docs:[\s\S]+|docs\(.+\):[\s\S]+/
-        let commitDefaultStyle = /style:[\s\S]+|style\(.+\):[\s\S]+/
-        let commitDefaultRefactor = /refactor:[\s\S]+|refactor\(.+\):[\s\S]+/
-        let commitDefaultPerf = /perf:[\s\S]+|perf\(.+\):[\s\S]+/
-        let commitDefaultFix = /fix:[\s\S]+|fix\(.+\):[\s\S]+/
-        let commitDefaultHotFix = /hotfix:[\s\S]+|hotfix\(.+\):[\s\S]+/
-        let commitDefaultBreakingChange = /[a-zA-Z]+!:[\s\S]+|[a-zA-Z]+\(.+\)!:[\s\S]+/
-        
-        
-        
-        if ((commitDefaultFeat.test(message) || commitDefaultBuild.test(message) || 
-            commitDefaultChore.test(message) || commitDefaultCi.test(message) || 
-            commitDefaultDocs.test(message) || commitDefaultStyle.test(message) ||
-            commitDefaultRefactor.test(message) ||commitDefaultPerf.test(message)) && minor == 0){
-            contentRelease += `- ${message} \n`
-            minor++
-        }
-
-        if ((commitDefaultFix.test(message) || commitDefaultHotFix.test(message)) && patch == 0) {
-            contentRelease += `- ${message} \n`
-            patch++
-        }
-
-        if (commitDefaultBreakingChange.test(message) && major == 0) {
-            contentRelease += `- ${message} \n`
-            major++
-        }
     }
+
+    if (isMinor(message, length)){
+        contentRelease += `- ${message} \n`
+        minor++
+    }
+
+    if (isPatch(message, length)) {
+        contentRelease += `- ${message} \n`
+        patch++
+    }
+
+    
+}
+
+function isMinor(message, length){
+    return ((/feat:[\s\S]+|feat\(.+\):[\s\S]+/.test(message) || /build:[\s\S]+|build\(.+\):[\s\S]+/.test(message) || 
+    /chore:[\s\S]+|chore\(.+\):[\s\S]+/.test(message) || /ci:[\s\S]+|ci\(.+\):[\s\S]+/.test(message) || 
+    /docs:[\s\S]+|docs\(.+\):[\s\S]+/.test(message) || /style:[\s\S]+|style\(.+\):[\s\S]+/.test(message) ||
+    /test:[\s\S]+|test\(.+\):[\s\S]+/.test(message) ||
+    /refactor:[\s\S]+|refactor\(.+\):[\s\S]+/.test(message) ||/perf:[\s\S]+|perf\(.+\):[\s\S]+/.test(message)) && minor == 0
+    && !(length.length >= 3 && length.pop() != ''))
+}
+
+function isPatch(message, length){
+    return ((/fix:[\s\S]+|fix\(.+\):[\s\S]+/.test(message) || /hotfix:[\s\S]+|hotfix\(.+\):[\s\S]+/.test(message)) && patch == 0
+    && !(length.length >= 3 && length.pop() != ''))
+}
+
+function isMajor(message, length){
+    return (/[a-zA-Z]+!:[\s\S]+|[a-zA-Z]+\(.+\)!:[\s\S]+/.test(message) && major == 0 || length.length >= 3 && length.pop() != '')
+}
+
+async function getFullChange(fullChanges){
+    let result = ''
+    fullChanges.split(`\n`).map((fullChange) => {
+        if(/\**\Full Changelog\**\:[\s\S]+|feat\(.+\):[\s\S]+/.test(fullChange)){
+            result =  `\n ${fullChange}`
+            return
+        }
+    })
+    return result
 }
 
 async function getCommits(number){
@@ -183,6 +234,33 @@ async function getCommits(number){
         owner: github.context.payload.repository.owner.name,
         repo: github.context.payload.repository.name,
         pull_number: number
+    })
+}
+
+async function getRelease(milestone){
+    let release_milestone = 0
+    let body_milestone = ''
+    let id_release_milestone
+    let number_release = milestone != null? milestone.split(/([a-z]|[A-z])+\.*/).pop() : null
+    return octokit.request('GET /repos/{owner}/{repo}/releases', {
+        owner: github.context.payload.repository.owner.name,
+        repo: github.context.payload.repository.name
+    }).then((res)=>{
+        let isRelease = false
+        if(number_release != null){
+            res.data.map(({tag_name, body, id})=>{
+                if(tag_name.split(/([a-z]|[A-z])+\.*/).pop() == number_release){
+                    release_milestone = tag_name
+                    body_milestone = body
+                    id_release_milestone = id
+                    isRelease = true;
+                }
+            })
+        }
+            
+        return isRelease ? {status: res.status, last_release: release_milestone, body: body_milestone, id: id_release_milestone } : {status: 404, last_release: res.data[0].tag_name, body:null, id:null}
+    }).catch(()=>{            
+        return {status: 404, last_release: null, body:null, id:null}
     })
 
 }
