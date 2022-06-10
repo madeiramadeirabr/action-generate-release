@@ -26,6 +26,6 @@ jobs:
           fetch-depth: 0
 
       - name: update package.json
-        uses: madeiramadeirabr/action-generate-changelog@0.1.1
+        uses: madeiramadeirabr/action-generate-changelog@production
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
