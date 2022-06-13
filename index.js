@@ -212,11 +212,7 @@ function isNotPatchAndNotMinorAndNotMajor(message,length){
 }
 
 function isMinor(message, length){
-    return ((/feat:[\s\S]+|feat\(.+\):[\s\S]+/.test(message) || /build:[\s\S]+|build\(.+\):[\s\S]+/.test(message) || 
-    /chore:[\s\S]+|chore\(.+\):[\s\S]+/.test(message) || /ci:[\s\S]+|ci\(.+\):[\s\S]+/.test(message) || 
-    /docs:[\s\S]+|docs\(.+\):[\s\S]+/.test(message) || /style:[\s\S]+|style\(.+\):[\s\S]+/.test(message) ||
-    /test:[\s\S]+|test\(.+\):[\s\S]+/.test(message) ||
-    /refactor:[\s\S]+|refactor\(.+\):[\s\S]+/.test(message) ||/perf:[\s\S]+|perf\(.+\):[\s\S]+/.test(message)) && minor == 0
+    return ((/feat:[\s\S]+|feat\(.+\):[\s\S]+/.test(message)) && minor == 0
     && !(length.length >= 3 && length.pop() != ''))
 }
 
