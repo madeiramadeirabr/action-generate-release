@@ -9084,7 +9084,7 @@ async function getFullChange(fullChanges){
     let result = ''
     fullChanges.split(`\n`).map((fullChange) => {
         if(/\**\Full Changelog\**\:[\s\S]+|feat\(.+\):[\s\S]+/.test(fullChange)){
-            result =  `\n ${fullChange}`
+            result =  `\n${fullChange}`
             return
         }
     })
