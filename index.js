@@ -59,6 +59,17 @@ async function calculateAndPrepareContentRelease(numberPullRequest, last_release
     }
 
     let nextRelease = lastTag != undefined && lastTag != '' && lastTag != null ? nextTag(lastTag) : `${major}.${minor}.${patch}`
+    
+    if(`${major}.${minor}.${patch}`.split(/([a-z]|[A-z])+\.*/).pop() == lastTag.split(/([a-z]|[A-z])+\.*/).pop() ){        
+       let data_last_release = await getRelease(lastTag)
+        last_release =  data_last_release.last_release
+        id = data_last_release.id
+        fullChange = await getFullChange(data_last_release.body)
+        data_last_release.body = data_last_release.body.replace(/\**\Full Changelog\**\:[\s\S]+|feat\(.+\):[\s\S]+/, "").trim()
+        data_last_release.body+=  `\n${contentRelease.replace("## What's Changed \n","")}`
+        contentRelease = data_last_release.body
+    }
+
     if(lastTag != null)
         contentRelease += fullChange == '' ? `\n **Full Changelog**: https://github.com/${github.context.payload.repository.owner.name}/${github.context.payload.repository.name}/compare/${last_release}...${nextRelease}\n` : fullChange
     if(id != null){
