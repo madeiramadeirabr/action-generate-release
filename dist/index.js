@@ -9057,17 +9057,14 @@ function countSemanticRelease(message){
     let length = message.split('\n')
     
     if (isMajor(message, length)) {
-        contentRelease += `- ${message} \n`
         major++
     }
 
     if (isMinor(message, length)){
-        contentRelease += `- ${message} \n`
         minor++
     }
 
     if (isPatch(message, length)) {
-        contentRelease += `- ${message} \n`
         patch++
     }
 
@@ -9086,16 +9083,28 @@ function isNotPatchAndNotMinorAndNotMajor(message,length){
 }
 
 function isMinor(message, length){
-    return ((/feat:[\s\S]+|feat\(.+\):[\s\S]+/.test(message)) && minor == 0
-    && !(length.length >= 3 && length.pop() != ''))
+    if((/feat:[\s\S]+|feat\(.+\):[\s\S]+/.test(message)) && !(length.length >= 3 && length.pop() != '')){
+        contentRelease += `- ${message} \n`
+    }
+
+    return ((/feat:[\s\S]+|feat\(.+\):[\s\S]+/.test(message)) && minor == 0 
+        && !(length.length >= 3 && length.pop() != ''))
 }
 
 function isPatch(message, length){
+    if(((/fix:[\s\S]+|fix\(.+\):[\s\S]+/.test(message) || /hotfix:[\s\S]+|hotfix\(.+\):[\s\S]+/.test(message)) && !(length.length >= 3 && length.pop() != ''))){
+        contentRelease += `- ${message} \n`
+    }
+
     return ((/fix:[\s\S]+|fix\(.+\):[\s\S]+/.test(message) || /hotfix:[\s\S]+|hotfix\(.+\):[\s\S]+/.test(message)) && patch == 0
-    && !(length.length >= 3 && length.pop() != ''))
+        && !(length.length >= 3 && length.pop() != ''))
 }
 
 function isMajor(message, length){
+    if(/[a-zA-Z]+!:[\s\S]+|[a-zA-Z]+\(.+\)!:[\s\S]+/.test(message) || length.length >= 3 && length.pop() != ''){
+        contentRelease += `- ${message} \n`
+    }
+    
     return (/[a-zA-Z]+!:[\s\S]+|[a-zA-Z]+\(.+\)!:[\s\S]+/.test(message) && major == 0 || length.length >= 3 && length.pop() != '')
 }
 
