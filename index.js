@@ -60,7 +60,7 @@ async function calculateAndPrepareContentRelease(numberPullRequest, last_release
 
     let nextRelease = lastTag != undefined && lastTag != '' && lastTag != null ? nextTag(lastTag) : `${major}.${minor}.${patch}`
     
-    if(lastTag != null){
+    if(lastTag != null && id == null){
         if(`${major}.${minor}.${patch}`.split(/([a-z]|[A-z])+\.*/).pop() == lastTag.split(/([a-z]|[A-z])+\.*/).pop() ){        
             let data_last_release = await getRelease(lastTag)
              last_release =  data_last_release.last_release
