@@ -9,6 +9,14 @@ Esta action calcula as mudanças em releases usando o padrão de conventional co
 
 ## Requisitos:
 - Utilizar o padrão de conventional commits ao realizar commits
+- A permissão do fluxo de trabalho de leitura e escrita deve está ativa conforme mostrado nas imagens abaixo
+
+![img](https://github.com/madeiramadeirabr/action-generate-release/blob/production/img/settings.png)
+
+![img](https://github.com/madeiramadeirabr/action-generate-release/blob/production/img/workflows_permissions.png)
+
+## Diagrama:
+![img](https://github.com/madeiramadeirabr/action-generate-release/blob/production/img/diagram.png)
 
 ## Exemplo de uso
 ```yml
