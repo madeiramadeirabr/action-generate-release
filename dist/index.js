@@ -8932,9 +8932,12 @@ async function calculateAndPrepareContentRelease(numberPullRequest, last_release
              data_last_release.body+=  `\n${contentRelease.replace("## What's Changed \n","")}`
              contentRelease = data_last_release.body
          }
+    }
+
+    if (lastTag != null ){
         contentRelease += fullChange == '' ? `\n **Full Changelog**: https://github.com/${github.context.payload.repository.owner.name}/${github.context.payload.repository.name}/compare/${last_release}...${nextRelease}\n` : fullChange
     }
-    
+
     if(id != null){
         let {status} = await updateReleaseNote(last_release, contentRelease, id)
         if(status == 200){
