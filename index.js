@@ -72,7 +72,7 @@ async function calculateAndPrepareContentRelease(numberPullRequest, last_release
          }
     }
 
-    if (lastTag != null && (id != null && fullChange.length > 0)){
+    if (lastTag != null ){
         contentRelease += fullChange == '' ? `\n **Full Changelog**: https://github.com/${github.context.payload.repository.owner.name}/${github.context.payload.repository.name}/compare/${last_release}...${nextRelease}\n` : fullChange
     }
 
