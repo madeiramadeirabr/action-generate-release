@@ -1,0 +1,17 @@
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: action-generate-release
+  description: |
+    Github Action que valida as mudanças usando o padrão de conventional commits e gera uma release.
+  annotations:
+    github.com/project-slug: madeiramadeirabr/action-generate-release
+    sonarqube.org/project-key: madeiramadeirabr/action-generate-release
+    backstage.io/techdocs-ref: dir:.
+  tags:
+  - javascript
+  - github-action
+spec:
+  type: library
+  lifecycle: production
+  owner: team-platform-services
