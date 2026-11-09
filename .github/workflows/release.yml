@@ -6,7 +6,7 @@ on:
 
 jobs:
   release:
-    runs-on: ubuntu-latest
+    runs-on: codebuild-madeiramadeira-${{ github.run_id }}-${{ github.run_attempt }}
     steps:
       - name: Checkout
         id: release
@@ -15,7 +15,7 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
   changelog:
-    runs-on: ubuntu-latest
+    runs-on: codebuild-madeiramadeira-${{ github.run_id }}-${{ github.run_attempt }}
     name: 'Changelog'
     needs: release
     steps:
